@@ -34,45 +34,58 @@ let modelName = 'dearkarina/my_miniroberta_model';
 
 // Listen for messages from the main thread
 self.addEventListener('message', async (event) => {
-   const arrayText = event.data.text
-      .replace('[', '')
-      .replace(']', '')
-      .replace('", ', "', ")
-      .split("', ");
-   console.log(
-      '🚀 ~ self.addEventListener ~ arrayText:',
-      arrayText,
-      Array.isArray(arrayText)
-   );
-   let results = [];
-   // Retrieve the classification pipeline. When called for the first time,
-   // this will load the pipeline and save it for future use.
-   for (let i = 0; i < arrayText.length; i++) {
-      const text = arrayText[i];
-      let classifier = await PipelineSingleton.getInstance((x) => {
-         // We also add a progress callback to the pipeline so that we can
-         // track model loading.
+   // const arrayText = event.data.text
+   //    .replace('[', '')
+   //    .replace(']', '')
+   //    .replace('", ', "', ")
+   //    .split("', ");
+   // let results = [];
+   // // Retrieve the classification pipeline. When called for the first time,
+   // // this will load the pipeline and save it for future use.
+   // for (let i = 0; i < arrayText.length; i++) {
+   //    const text = arrayText[i];
+   //    let classifier = await PipelineSingleton.getInstance((x) => {
+   //       // We also add a progress callback to the pipeline so that we can
+   //       // track model loading.
 
-         self.postMessage(x);
-      });
+   //       self.postMessage(x);
+   //    });
 
-      const tokenizer = await AutoTokenizer.from_pretrained(modelName);
-      const max_length = 50;
-      padding_token_id = tokenizer.pad_token_id;
+   //    const tokenizer = await AutoTokenizer.from_pretrained(modelName);
+   //    const max_length = 30;
+   //    padding_token_id = tokenizer.pad_token_id;
 
-      const encoded_ids = tokenizer.encode(text);
-      const padded_ids = truncate_and_pad(encoded_ids, max_length);
+   //    const encoded_ids = tokenizer.encode(text);
+   //    const padded_ids = truncate_and_pad(encoded_ids, max_length);
 
-      const tokenizedText = tokenizer.decode(padded_ids);
-      // Actually perform the classification
-      let output = await classifier(tokenizedText, { topk: 1 });
-      results.push(output[0]);
-   }
+   //    const tokenizedText = tokenizer.decode(padded_ids);
+   //    // Actually perform the classification
+   //    let output = await classifier(tokenizedText, { topk: 3 });
+   //    console.log('🚀 ~ self.addEventListener ~ output:', output);
+   //    results.push(output[0]);
+   // }
    // console.log('🚀 ~ self.addEventListener ~ output:', output);
 
    // Send the output back to the main thread
+   let classifier = await PipelineSingleton.getInstance((x) => {
+      //       // We also add a progress callback to the pipeline so that we can
+      //       // track model loading.
+
+      self.postMessage(x);
+   });
+
+   const tokenizer = await AutoTokenizer.from_pretrained(modelName);
+   const max_length = 30;
+   padding_token_id = tokenizer.pad_token_id;
+
+   const encoded_ids = tokenizer.encode(event.data.text);
+   const padded_ids = truncate_and_pad(encoded_ids, max_length);
+
+   const tokenizedText = tokenizer.decode(padded_ids);
+   // Actually perform the classification
+   let output = await classifier(tokenizedText, { topk: 3 });
    self.postMessage({
       status: 'complete',
-      output: results,
+      output: output,
    });
 });
